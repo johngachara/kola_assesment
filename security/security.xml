@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- 1. Module category -->
+  <record id="module_category_purchase_request" model="ir.module.category">
+    <field name="name">Kola Assignment</field>
+    <field name="sequence">20</field>
+  </record>
+
+
+
+  <!-- 2. Security groups -->
+  <record id="group_purchase_request_user" model="res.groups">
+    <field name="name">RFQ CUSTOMIZATION/ User</field>
+    <field name="category_id" ref="module_category_purchase_request"/>
+    <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+
+  <record id="group_purchase_request_manager" model="res.groups">
+    <field name="name">RFQ CUSTOMIZATION / Manager</field>
+    <field name="category_id" ref="module_category_purchase_request"/>
+    <field name="implied_ids" eval="[(4, ref('group_purchase_request_user'))]"/>
+  </record>
+
+  <record id="group_purchase_request_procurement" model="res.groups">
+    <field name="name">RFQ CUSTOMIZATION / Procurement</field>
+    <field name="category_id" ref="module_category_purchase_request"/>
+    <field name="implied_ids" eval="[(4, ref('group_purchase_request_user'))]"/>
+  </record>
+
+  <data noupdate="1">
+    <!-- 3. Employees see only their own requests -->
+    <record id="rule_purchase_request_user" model="ir.rule">
+      <field name="name">User: own purchase requests only</field>
+      <field name="model_id" ref="model_purchase_request"/>
+      <field name="domain_force">[('create_uid', '=', user.id)]</field>
+      <field name="groups" eval="[(4, ref('group_purchase_request_user'))]"/>
+    </record>
+
+    <!-- 4. Managers see only their department’s requests -->
+    <record id="rule_purchase_request_manager" model="ir.rule">
+      <field name="name">Manager: department purchase requests</field>
+      <field name="model_id" ref="model_purchase_request"/>
+      <field name="domain_force">[('department_id', '=', user.department_id.id)]</field>
+      <field name="groups" eval="[(4, ref('group_purchase_request_manager'))]"/>
+    </record>
+
+    <!-- 5. Procurement sees all requests -->
+    <record id="rule_purchase_request_procurement" model="ir.rule">
+      <field name="name">Procurement: all purchase requests</field>
+      <field name="model_id" ref="model_purchase_request"/>
+      <field name="domain_force">[(1, '=', 1)]</field>
+      <field name="groups" eval="[(4, ref('group_purchase_request_procurement'))]"/>
+    </record>
+  </data>
+</odoo>

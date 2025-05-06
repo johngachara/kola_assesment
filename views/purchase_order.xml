@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_purchase_order_form_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="vendor_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                <field name="bid_ids" widget="one2many_list"/>
+                <field name="is_multi_vendor_rfq" readonly="1"/>
+                <field name="purchase_request_id" readonly="1"/>
+                <button name="select_winning_bid" type="object" string="Select Winning Bid"/>
+                <button name="action_send_to_multiple_vendors" string="Send to Vendors" type="object"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Bids">
+                    <field name="bid_ids">
+                        <list string="Bids" editable="bottom">
+                            <field name="vendor_id"/>
+                            <field name="bid_amount"/>
+                            <field name="state"/>
+                            <button name="action_submit" string="Submit" type="object" icon="fa-check"/>
+                            <button name="action_select" string="Select" type="object" icon="fa-trophy"/>
+                            <button name="action_reject" string="Reject" type="object" icon="fa-times"/>
+                        </list>
+                    </field>
+                    <group>
+                        <field name="winning_bid_id" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_bid_list_view" model="ir.ui.view">
+        <field name="name">purchase.bid.list</field>
+        <field name="model">purchase.bid</field>
+        <field name="arch" type="xml">
+            <list string="Bids">
+                <field name="purchase_order_id"/>
+                <field name="vendor_id"/>
+                <field name="bid_amount"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Purchase Request Views -->
+    <record id="view_purchase_request_form" model="ir.ui.view">
+        <field name="name">purchase.request.form</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <form string="Purchase Request">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object"/>
+                    <button name="action_approve" string="Approve" type="object" icon="fa-check"/>
+                    <button name="create_rfq" string="Create RFQ" type="object"/>
+                    <button name="action_reject" string="Reject" type="object" icon="fa-times"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="employee_id"/>
+                        <field name="product_id"/>
+                        <field name="product_qty"/>
+                        <field name="justification"/>
+                        <field name="rfq_id" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_list" model="ir.ui.view">
+        <field name="name">purchase.request.list</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <list string="Purchase Requests">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="product_id"/>
+                <field name="product_qty"/>
+                <field name="state"/>
+                <field name="date_request"/>
+                <field name="expected_date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Actions and Menus -->
+    <record id="action_purchase_order" model="ir.actions.act_window">
+        <field name="name">Purchase Orders</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">current</field>
+    </record>
+
+    <record id="action_purchase_bid" model="ir.actions.act_window">
+        <field name="name">Supplier Bids</field>
+        <field name="res_model">purchase.bid</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_purchase_request" model="ir.actions.act_window">
+        <field name="name">Purchase Requests</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">current</field>
+    </record>
+
+    <menuitem id="menu_purchase_customization" name="Purchase Customization" sequence="10"/>
+
+    <menuitem id="menu_purchase_order" name="Purchase Orders"
+              parent="menu_purchase_customization" action="action_purchase_order" sequence="10" groups="group_purchase_request_manager"/>
+
+    <menuitem id="menu_purchase_request_management" name="Purchase Requests"
+              action="action_purchase_request" parent="menu_purchase_customization" sequence="20"/>
+
+    <menuitem id="menu_purchase_bid" name="Supplier Bids"
+              parent="menu_purchase_customization" action="action_purchase_bid" sequence="30"/>
+</odoo>
