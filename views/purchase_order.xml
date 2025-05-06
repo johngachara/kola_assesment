@@ -113,7 +113,7 @@
     <menuitem id="menu_purchase_customization" name="Purchase Customization" sequence="10"/>
 
     <menuitem id="menu_purchase_order" name="Purchase Orders"
-              parent="menu_purchase_customization" action="action_purchase_order" sequence="10" groups="group_purchase_request_manager"/>
+              parent="menu_purchase_customization" action="action_purchase_order" sequence="10" />
 
     <menuitem id="menu_purchase_request_management" name="Purchase Requests"
               action="action_purchase_request" parent="menu_purchase_customization" sequence="20"/>
