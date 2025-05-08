@@ -1,5 +1,5 @@
 from odoo import models, fields,api,_
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, AccessError
 from odoo.tools import float_is_zero
 
 
@@ -38,12 +38,18 @@ class PurchaseBid(models.Model):
                 raise ValidationError(_('Bid amount must be greater than zero.'))
 
     def action_submit(self):
+        if not  self.env.user.has_group('kola_assignment.group_purchase_request_procurement'):
+            raise AccessError(_("Only procurement can submit bids."))
         self.write({'state': 'submitted'})
 
     def action_select(self):
+        if not  self.env.user.has_group('kola_assignment.group_purchase_request_procurement'):
+            raise AccessError(_("Only procurement can select bids"))
         self.write({'state': 'selected'})
         # Set this bid as the winning bid on the RFQ
         self.purchase_order_id.winning_bid_id = self.id
 
     def action_reject(self):
+        if not  self.env.user.has_group('kola_assignment.group_purchase_request_procurement'):
+            raise AccessError(_("Only procurement can reject bids."))
         self.write({'state': 'rejected'})

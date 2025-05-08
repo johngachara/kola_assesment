@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError, ValidationError, AccessError
 from odoo.tools import float_is_zero
 
 
@@ -12,20 +12,16 @@ class PurchaseOrder(models.Model):
     )
     bid_ids = fields.One2many('purchase.bid', 'purchase_order_id', string='Bids')
     winning_bid_id = fields.Many2one('purchase.bid', string='Winning Bid')
-    is_multi_vendor_rfq = fields.Boolean('Multi-Vendor RFQ', default=False)
+    is_multi_vendor_rfq = fields.Boolean('Multi-Vendor RFQ', default=True)
     purchase_request_id = fields.Many2one('purchase.request', string='Purchase Request')
     parent_rfq_id = fields.Many2one('purchase.order', string='Parent RFQ')
 
 
-    @api.onchange('vendor_ids')
-    def _onchange_vendor_ids(self):
-        # Check how many vendors are selected
-        if len(self.vendor_ids) > 1:
-            self.is_multi_vendor_rfq = True
-        else:
-            self.is_multi_vendor_rfq = False
+
 
     def action_send_to_multiple_vendors(self):
+        if not  self.env.user.has_group('kola_assignment.group_purchase_request_procurement'):
+            raise AccessError(_("Only procurement can send rfq's"))
         for order in self:
             if not order.vendor_ids:
                 raise UserError(_("Please select vendors first!"))
@@ -50,6 +46,8 @@ class PurchaseOrder(models.Model):
         return True
 
     def select_winning_bid(self):
+        if not  self.env.user.has_group('kola_assignment.group_purchase_request_procurement'):
+            raise AccessError(_("Only procurement can select the winning bid"))
         for order in self:
             if not order.bid_ids:
                 raise UserError(_("No bids received yet!"))

@@ -5,18 +5,22 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="vendor_ids" widget="many2many_tags" options="{'no_create': True}"/>
-                <field name="bid_ids" widget="one2many_list"/>
-                <field name="is_multi_vendor_rfq" readonly="1"/>
+
+                 <!-- Hide the partner_id field unless when a purchase order -->
+    <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="invisible">state != 'purchase'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after" >
+                <field name="vendor_ids" widget="many2many_tags"  invisible="state == 'purchase'" />
+                <field name="is_multi_vendor_rfq" invisible="state == 'purchase'"/>
                 <field name="purchase_request_id" readonly="1"/>
-                <button name="select_winning_bid" type="object" string="Select Winning Bid"/>
-                <button name="action_send_to_multiple_vendors" string="Send to Vendors" type="object"/>
+                <button name="select_winning_bid" type="object" string="Select Winning Bid" groups="kola_assignment.group_purchase_request_procurement"  invisible="state == 'purchase'"/>
+                <button name="action_send_to_multiple_vendors" string="Send to Vendors" type="object" groups="kola_assignment.group_purchase_request_procurement"  invisible="state == 'purchase'"/>
             </xpath>
             <xpath expr="//notebook" position="inside">
-                <page string="Bids">
-                    <field name="bid_ids">
-                        <list string="Bids" editable="bottom">
+                <page string="Bids"  invisible="state == 'purchase'">
+                    <field name="bid_ids" >
+                        <list string="Bids" >
                             <field name="vendor_id"/>
                             <field name="bid_amount"/>
                             <field name="state"/>
@@ -33,6 +37,47 @@
         </field>
     </record>
 
+
+<record id="view_purchase_order_tree_inherit" model="ir.ui.view">
+    <field name="name">purchase.order.tree.inherit</field>
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_tree"/>
+    <field name="arch" type="xml">
+         <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="invisible">state != 'purchase'</attribute>
+            </xpath>
+        <xpath expr="//field[@name='partner_id']" position="after">
+            <field name="purchase_request_id" optional="show"/>
+        </xpath>
+        <xpath expr="//field[@name='company_id']" position="before">
+            <field name="vendor_ids" widget="many2many_tags" />
+        </xpath>
+    </field>
+</record>
+    <!--  sequence for purchase requests -->
+    <data noupdate="1">
+        <record id="seq_purchase_request" model="ir.sequence">
+            <field name="name">Purchase Request</field>
+            <field name="code">purchase.request</field>
+            <field name="prefix">PR</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+
+
+       <record id="view_purchase_request_line_tree" model="ir.ui.view">
+        <field name="name">purchase.request.line.list</field>
+        <field name="model">purchase.request.line</field>
+        <field name="arch" type="xml">
+            <list string="Purchase Request Lines">
+                <field name="request_id"/>
+                <field name="product_id"/>
+                <field name="product_qty"/>
+                <field name="product_uom_id"/>
+            </list>
+        </field>
+    </record>
     <record id="purchase_bid_list_view" model="ir.ui.view">
         <field name="name">purchase.bid.list</field>
         <field name="model">purchase.bid</field>
@@ -47,31 +92,70 @@
     </record>
 
     <!-- Purchase Request Views -->
-    <record id="view_purchase_request_form" model="ir.ui.view">
+<record id="view_purchase_request_form" model="ir.ui.view">
         <field name="name">purchase.request.form</field>
         <field name="model">purchase.request</field>
         <field name="arch" type="xml">
             <form string="Purchase Request">
                 <header>
-                    <button name="action_confirm" string="Confirm" type="object"/>
-                    <button name="action_approve" string="Approve" type="object" icon="fa-check"/>
-                    <button name="create_rfq" string="Create RFQ" type="object"/>
-                    <button name="action_reject" string="Reject" type="object" icon="fa-times"/>
-                    <field name="state" widget="statusbar"/>
+                    <button name="action_confirm" string="Confirm" type="object"
+                            class="oe_highlight"/>
+                    <button name="action_approve" string="Approve" type="object"
+                           groups="kola_assignment.group_purchase_request_procurement"
+                            class="oe_highlight"/>
+                    <button name="create_rfq" string="Create RFQ" type="object"
+                         groups="kola_assignment.group_purchase_request_procurement"
+                            class="oe_highlight"/>
+                    <button name="action_reject" string="Reject" type="object"
+                             class="oe_highlight"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,approved,rfq_created,done"/>
                 </header>
                 <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
                     <group>
-                        <field name="name" readonly="1"/>
-                        <field name="employee_id"/>
-                        <field name="product_id"/>
-                        <field name="product_qty"/>
-                        <field name="justification"/>
-                        <field name="rfq_id" readonly="1"/>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="department_id"/>
+                            <field name="date_request"/>
+                            <field name="expected_date"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="justification"/>
+                        </group>
                     </group>
+                    <notebook>
+                        <page string="Products">
+                            <field name="line_ids">
+                                <list string="Request Lines" editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="remarks"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="RFQs" >
+                            <field name="rfq_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="date_order"/>
+                                    <field name="amount_total"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
+
 
     <record id="view_purchase_request_list" model="ir.ui.view">
         <field name="name">purchase.request.list</field>
@@ -80,8 +164,6 @@
             <list string="Purchase Requests">
                 <field name="name"/>
                 <field name="employee_id"/>
-                <field name="product_id"/>
-                <field name="product_qty"/>
                 <field name="state"/>
                 <field name="date_request"/>
                 <field name="expected_date"/>
@@ -110,14 +192,15 @@
         <field name="target">current</field>
     </record>
 
-    <menuitem id="menu_purchase_customization" name="Purchase Customization" sequence="10"/>
+    <menuitem id="menu_purchase_customization" name="Purchase Customization"  sequence="10"/>
 
     <menuitem id="menu_purchase_order" name="Purchase Orders"
-              parent="menu_purchase_customization" action="action_purchase_order" sequence="10" />
+              parent="menu_purchase_customization" action="action_purchase_order"  groups="kola_assignment.group_purchase_request_procurement,kola_assignment.group_purchase_request_manager" sequence="10" />
 
     <menuitem id="menu_purchase_request_management" name="Purchase Requests"
               action="action_purchase_request" parent="menu_purchase_customization" sequence="20"/>
 
     <menuitem id="menu_purchase_bid" name="Supplier Bids"
+              groups="kola_assignment.group_purchase_request_procurement,kola_assignment.group_purchase_request_manager"
               parent="menu_purchase_customization" action="action_purchase_bid" sequence="30"/>
 </odoo>
